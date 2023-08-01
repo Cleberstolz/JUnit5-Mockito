@@ -3,6 +3,7 @@ package br.com.dicasdeumdev.api.services.impl;
 import br.com.dicasdeumdev.api.domain.User;
 import br.com.dicasdeumdev.api.domain.dto.UserDTO;
 import br.com.dicasdeumdev.api.repositories.UserRepository;
+import br.com.dicasdeumdev.api.services.exceptions.DataIntegratyViolationException;
 import br.com.dicasdeumdev.api.services.exceptions.ObjectNotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,11 +15,12 @@ import org.mockito.MockitoAnnotations;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 class UserServiceImplTest {
@@ -28,6 +30,7 @@ class UserServiceImplTest {
     public static final String EMAIL = "cleber@email.com";
     public static final String SENHA = "123";
     public static final String OBJETO_NAO_ENCONTRADO = "Objeto não Encontrado";
+    public static final int INDEX = 0;
 
     @InjectMocks
     private UserServiceImpl service;
@@ -74,11 +77,46 @@ class UserServiceImplTest {
     }
 
     @Test
-    void findAll() {
+    void whenFindAllThenReturnAnListOfUsers() {
+        when(repository.findAll()).thenReturn(List.of(user));
+
+        List<User> response = service.findAll();
+
+        assertNotNull(response);
+        assertEquals(1, response.size());
+        assertEquals(User.class, response.get(0).getClass());
+
+        assertEquals(ID, response.get(INDEX).getId());
+        assertEquals(NAME, response.get(INDEX).getName());
+        assertEquals(EMAIL, response.get(INDEX).getEmail());
+        assertEquals(SENHA, response.get(INDEX).getPassword());
     }
 
     @Test
-    void create() {
+    void whenCreateThenReturnSucess() {
+        when(repository.save(any())).thenReturn(user);
+
+        User response = service.create(userDTO);
+
+        assertNotNull(response);
+        assertEquals(User.class, response.getClass());
+        assertEquals(ID, response.getId());
+        assertEquals(NAME, response.getName());
+        assertEquals(EMAIL, response.getEmail());
+        assertEquals(SENHA, response.getPassword());
+    }
+
+    @Test
+    void whenCreateThenReturnAnDataIntegrityViolationException() {
+        when(repository.findByEmail(anyString())).thenReturn(optionalUser);
+
+        try {
+            optionalUser.get().setId(2);
+            service.create(userDTO);
+        } catch (Exception e) {
+            assertEquals(DataIntegratyViolationException.class, e.getClass());
+            assertEquals("E-mail já cadastrado no sistema", e.getMessage());
+        }
     }
 
     @Test
