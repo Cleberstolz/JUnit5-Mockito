@@ -41,7 +41,7 @@ class UserResourceTest {
     private ModelMapper mapper;
 
     private User user;
-    private UserDTO userDTO;
+    private UserDTO userDTO = new UserDTO();
 
     @BeforeEach
     void setUp() {
